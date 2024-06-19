@@ -23,7 +23,7 @@ CYCLE_LENGTH = 3
 MAX_DELAY = 20
 
 F_HZ = 1/(2*CYCLE_LENGTH)
-MAX_STEP = CYCLE_LENGTH / TIME_STEP
+MAX_STEP = int(CYCLE_LENGTH / TIME_STEP)
 MAX_DELAY_STEP = int(MAX_DELAY / TIME_STEP)
 
 
@@ -33,6 +33,7 @@ current_steps = [0] * LED_COUNT
 the_wave = [0.0] * MAX_STEP
 
 def precalculate_wave():
+    global the_wave
     for i in range(0,MAX_STEP):
         the_wave[i] = math.sin(2*math.pi*F_HZ*i*TIME_STEP)
 
@@ -53,7 +54,7 @@ def loop():
         if current_steps[i] < 0:
             # Then we're off, just iterate.
             current_steps[i] += 1
-        elif current_steps[i] > MAX_STEP:
+        elif current_steps[i] >= MAX_STEP:
             outputs[i].setDutyCycle(0) #Turn it off
             # Then it's time to choose a new random delay
             current_steps[i] = -1 * secrets.randbelow(MAX_DELAY_STEP)
@@ -75,6 +76,8 @@ def initialize():
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
     initialize()
+    precalculate_wave()
+    print("Beginning.")
     while True:
         loop()
         time.sleep(TIME_STEP)
