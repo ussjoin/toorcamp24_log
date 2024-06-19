@@ -1,4 +1,6 @@
+# virtualenv nurselog_venv
 # source nurselog_venv/bin/activate
+# pip3 install Phidget22
 
 from Phidget22.Phidget import *
 from Phidget22.Devices.DigitalOutput import *
@@ -28,6 +30,11 @@ MAX_DELAY_STEP = int(MAX_DELAY / TIME_STEP)
 outputs = [None] * LED_COUNT
 current_steps = [0] * LED_COUNT
 
+the_wave = [0.0] * MAX_STEP
+
+def precalculate_wave():
+    for i in range(0,MAX_STEP):
+        the_wave[i] = math.sin(2*math.pi*F_HZ*i*TIME_STEP)
 
 def signal_handler(sig, frame):
     print('You pressed Ctrl+C!')
@@ -46,14 +53,14 @@ def loop():
         if current_steps[i] < 0:
             # Then we're off, just iterate.
             current_steps[i] += 1
-        elif current_steps[i] >= MAX_STEP:
+        elif current_steps[i] > MAX_STEP:
+            outputs[i].setDutyCycle(0) #Turn it off
             # Then it's time to choose a new random delay
             current_steps[i] = -1 * secrets.randbelow(MAX_DELAY_STEP)
             print(f"Delay [{i}] for {-1 * current_steps[i]*TIME_STEP}s")
         else:
-            b = math.sin(2*math.pi*F_HZ*current_steps[i]*TIME_STEP)
-            outputs[i].setDutyCycle(b)
-            # print(b)
+            outputs[i].setDutyCycle(the_wave[current_steps[i]])
+            #print(b)
             current_steps[i] += 1
         
 
@@ -63,11 +70,6 @@ def initialize():
         outputs[i] = DigitalOutput()
         outputs[i].setChannel(i)
         outputs[i].openWaitForAttachment(5000)
-        
-
-        # Set to full brightness)
-        # outputs[i].setDutyCycle(1)
-
     
 
 if __name__ == "__main__":
